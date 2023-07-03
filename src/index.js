@@ -1,18 +1,20 @@
 import axios from 'axios';
+import SlimSelect from 'slim-select';
 import Notiflix from 'notiflix';
-// Set the API key
+
 axios.defaults.headers.common['x-api-key'] =
   'live_vzYp38p5aA1uUhQQsZkTYyJW0CYIO9XeaKkYdireKur9E2XHe7vag5Dsf9o1v50O';
 
-// Elements
 const breedSelect = document.querySelector('.breed-select');
-const loader = document.querySelector('.loader');
+
 const error = document.querySelector('.error');
 const catInfo = document.querySelector('.cat-info');
 
-// Fetch breeds
 function fetchBreeds() {
-  loader.style.display = 'block';
+  Notiflix.Loading.dots('Loading data, pleasse wait', {
+    backgroundColor: 'rgba(0,0,0,0.8)',
+  });
+
   breedSelect.disabled = true;
   error.style.display = 'none';
 
@@ -28,20 +30,25 @@ function fetchBreeds() {
         breedSelect.appendChild(option);
       });
 
-      loader.style.display = 'none';
+      new SlimSelect({
+        select: '#single',
+      });
+
       breedSelect.disabled = false;
       error.style.display = 'none';
+      Notiflix.Loading.remove();
     })
     .catch(error => {
-      loader.style.display = 'none';
-      Loading.dots('Loading...');
       handleError();
+      Notiflix.Loading.remove();
     });
 }
 
-// Fetch cat by breed
 function fetchCatByBreed(breedId) {
-  loader.style.display = 'block';
+  Notiflix.Loading.dots('Loading data, pleasse wait', {
+    backgroundColor: 'rgba(0,0,0,0.8)',
+  });
+
   catInfo.innerHTML = '';
 
   axios
@@ -53,6 +60,7 @@ function fetchCatByBreed(breedId) {
       const catImage = document.createElement('img');
       catImage.src = cat.url;
       catImage.alt = breed.name;
+      catImage.classList.add('cat-image');
 
       const breedName = document.createElement('h2');
       breedName.textContent = breed.name;
@@ -63,21 +71,34 @@ function fetchCatByBreed(breedId) {
       const temperament = document.createElement('p');
       temperament.textContent = breed.temperament;
 
-      catInfo.appendChild(catImage);
-      catInfo.appendChild(breedName);
-      catInfo.appendChild(description);
-      catInfo.appendChild(temperament);
+      const modalContent = document.createElement('div');
+      modalContent.appendChild(catImage);
+      modalContent.appendChild(breedName);
+      modalContent.appendChild(description);
+      modalContent.appendChild(temperament);
 
-      loader.style.display = 'none';
+      Swal.fire({
+        title: 'Cat Information',
+        html: modalContent.innerHTML,
+        showCloseButton: true,
+        showConfirmButton: false,
+        animation: true,
+        showClass: {
+          popup: 'animate__animated animate__fadeInDown',
+        },
+        hideClass: {
+          popup: 'animate__animated animate__fadeOutUp',
+        },
+      });
+      Notiflix.Loading.remove();
     })
     .catch(error => {
-      loader.style.display = 'none';
+      Notiflix.Loading.remove();
 
       handleError();
     });
 }
 
-// Handle error
 function handleError() {
   error.style.display = 'block';
   error.style.color = 'red';
@@ -86,11 +107,14 @@ function handleError() {
   );
 }
 
-// Event listener for breed select change
 breedSelect.addEventListener('change', () => {
   const selectedBreedId = breedSelect.value;
   fetchCatByBreed(selectedBreedId);
 });
 
-// Initial fetch of breeds
+breedSelect.addEventListener('change', () => {
+  const selectedBreedId = breedSelect.value;
+  fetchCatByBreed(selectedBreedId);
+});
+
 fetchBreeds();
